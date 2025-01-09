@@ -1,9 +1,9 @@
-from langchain.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain import PromptTemplate
+from langchain_community.vectorstores import FAISS
+from pydantic import BaseModel, Field
+from langchain_core import prompts
 from openai import RateLimitError
 from typing import List
 from rank_bm25 import BM25Okapi
@@ -172,7 +172,7 @@ def create_question_answer_from_context_chain(llm):
     """
 
     # Create a PromptTemplate object with the specified template and input variables
-    question_answer_from_context_prompt = PromptTemplate(
+    question_answer_from_context_prompt = prompts.PromptTemplate(
         template=question_answer_prompt_template,
         input_variables=["context", "question"],
     )

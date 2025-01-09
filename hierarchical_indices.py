@@ -6,16 +6,16 @@ from langchain_openai import ChatOpenAI
 from langchain.chains.summarize.chain import load_summarize_chain
 from langchain.docstore.document import Document
 
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..'))) # Add the parent directory to the path sicnce we work with notebooks
+# sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..'))) # Add the parent directory to the path sicnce we work with notebooks
 from helper_functions import *
-from evaluation.evalute_rag import *
+# from evaluation.evalute_rag import *
 from helper_functions import encode_pdf, encode_from_string
 
 # Load environment variables from a .env file
 load_dotenv()
 
 # Set the OpenAI API key environment variable
-os.environ["OPENAI_API_KEY"] = os.getenv('OPENAI_API_KEY')
+# os.environ["OPENAI_API_KEY"] = os.getenv('OPENAI_API_KEY')
 
 path = "../data/Understanding_Climate_Change.pdf"
 
@@ -51,7 +51,7 @@ async def encode_pdf_hierarchical(path, chunk_size=1000, chunk_overlap=200, is_s
 
 
     # Create document-level summaries
-    summary_llm = ChatOpenAI(temperature=0, model_name="gpt-4o-mini", max_tokens=4000)
+    summary_llm = ChatOpenAI(base_url='http://localhost:11434/v1', temperature=0, model_name="llama3.2", max_tokens=4000, api_key='ollama')
     summary_chain = load_summarize_chain(summary_llm, chain_type="map_reduce")
     
     async def summarize_doc(doc):
@@ -122,14 +122,20 @@ async def encode_pdf_hierarchical(path, chunk_size=1000, chunk_overlap=200, is_s
     return summary_vectorstore, detailed_vectorstore
 
 if os.path.exists("../vector_stores/summary_store") and os.path.exists("../vector_stores/detailed_store"):
-   embeddings = OpenAIEmbeddings()
-   summary_store = FAISS.load_local("../vector_stores/summary_store", embeddings, allow_dangerous_deserialization=True)
-   detailed_store = FAISS.load_local("../vector_stores/detailed_store", embeddings, allow_dangerous_deserialization=True)
+    embeddings = OpenAIEmbeddings() 
+    summary_store = FAISS.load_local("../vector_stores/summary_store", embeddings, allow_dangerous_deserialization=True)
+    detailed_store = FAISS.load_local("../vector_stores/detailed_store", embeddings, allow_dangerous_deserialization=True)
 
 else:
     summary_store, detailed_store = await encode_pdf_hierarchical(path)
     summary_store.save_local("../vector_stores/summary_store")
     detailed_store.save_local("../vector_stores/detailed_store")
+
+
+
+########################################################################################
+#                                   Retrieval
+########################################################################################
 
 def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_summaries=3, k_chunks=5):
     """
@@ -163,11 +169,23 @@ def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_su
     
     return relevant_chunks
 
-query = "What is the greenhouse effect?"
-results = retrieve_hierarchical(query, summary_store, detailed_store)
 
-# Print results
-for chunk in results:
-    print(f"Page: {chunk.metadata['page']}")
-    print(f"Content: {chunk.page_content}...")  # Print first 100 characters
-    print("---")
+
+########################################################################################
+#                 USER
+########################################################################################
+
+async def main():
+    query = "What is the greenhouse effect?"
+    results = retrieve_hierarchical(query, summary_store, detailed_store)
+
+    # Print results
+    for chunk in results:
+        print(f"Page: {chunk.metadata['page']}")
+        print(f"Content: {chunk.page_content}...")  # Print first 100 characters
+        print("---")
+
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
