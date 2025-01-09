@@ -1,16 +1,11 @@
 import asyncio
 import os
-import sys
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
-from langchain.chains.summarize.chain import load_summarize_chain
-from langchain.docstore.document import Document
 from hierarchical_indices_embedding import encode_pdf_hierarchical
 
 # sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..'))) # Add the parent directory to the path sicnce we work with notebooks
 from helper_functions import *
 # from evaluation.evalute_rag import *
-from helper_functions import encode_pdf, encode_from_string
 
 # Load environment variables from a .env file
 load_dotenv()
