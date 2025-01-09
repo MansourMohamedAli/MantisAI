@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.chains.summarize.chain import load_summarize_chain
 from langchain.docstore.document import Document
+from get_embedding_function import get_embedding_function
 
 # sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..'))) # Add the parent directory to the path sicnce we work with notebooks
 from helper_functions import *
@@ -96,7 +97,8 @@ async def encode_pdf_hierarchical(path, chunk_size=1000, chunk_overlap=200, is_s
         })
 
     # Create embeddings
-    embeddings = OpenAIEmbeddings(base_url='http://localhost:11434/v1/embeddings', api_key='ollama')
+    # embeddings = OpenAIEmbeddings(base_url='http://localhost:11434/v1/embeddings', api_key='ollama')
+    embeddings = get_embedding_function()
 
     # Create vector stores asynchronously with rate limit handling
     async def create_vectorstore(docs):
