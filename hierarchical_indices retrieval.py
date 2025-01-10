@@ -1,26 +1,14 @@
 import asyncio
 import os
-from dotenv import load_dotenv
+
 from hierarchical_indices_embedding import encode_pdf_hierarchical
+from get_embedding_function import get_embedding_function
 
-# sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..'))) # Add the parent directory to the path sicnce we work with notebooks
 from helper_functions import *
-# from evaluation.evalute_rag import *
 
-# Load environment variables from a .env file
-load_dotenv()
-path = "data/Understanding_Climate_Change.pdf"
+PATH = "data/Understanding_Climate_Change.pdf"
 
-# Set the OpenAI API key environment variable
-# os.environ["OPENAI_API_KEY"] = os.getenv('OPENAI_API_KEY')
-
-
-
-########################################################################################
-#                                   Retrieval
-########################################################################################
-
-def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_summaries=3, k_chunks=5):
+def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_summaries=5, k_chunks=1):
     """
     Performs a hierarchical retrieval using the query.
 
@@ -52,24 +40,18 @@ def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_su
     
     return relevant_chunks
 
-
-
-########################################################################################
-#                 USER
-########################################################################################
-
-async def main():
+async def main(model):
     if os.path.exists("vector_stores/summary_store") and os.path.exists("vector_stores/detailed_store"):
-        embeddings = OpenAIEmbeddings() 
+        embeddings = get_embedding_function(model)
         summary_store = FAISS.load_local("vector_stores/summary_store", embeddings, allow_dangerous_deserialization=True)
         detailed_store = FAISS.load_local("vector_stores/detailed_store", embeddings, allow_dangerous_deserialization=True)
 
     else:
-        summary_store, detailed_store = await encode_pdf_hierarchical(path)
+        summary_store, detailed_store = await encode_pdf_hierarchical(path=PATH, model=model)
         summary_store.save_local("vector_stores/summary_store")
         detailed_store.save_local("vector_stores/detailed_store")
 
-    query = "What is the greenhouse effect?"
+    query = "What Life Lifelong learning initiatives are being proviced?"
     results = retrieve_hierarchical(query, summary_store, detailed_store)
 
     # Print results
@@ -81,4 +63,4 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    asyncio.run(main("granite3-dense:8b"))

@@ -1,26 +1,13 @@
 import asyncio
-import os
-import sys
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
 from langchain.chains.summarize.chain import load_summarize_chain
 from langchain.docstore.document import Document
+from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from get_embedding_function import get_embedding_function
-
-# sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..'))) # Add the parent directory to the path sicnce we work with notebooks
 from helper_functions import *
-# from evaluation.evalute_rag import *
-from helper_functions import encode_pdf, encode_from_string
 
-# Load environment variables from a .env file
-load_dotenv()
-
-# Set the OpenAI API key environment variable
-# os.environ["OPENAI_API_KEY"] = os.getenv('OPENAI_API_KEY')
-
-path = "data/Understanding_Climate_Change.pdf"
-
-async def encode_pdf_hierarchical(path, chunk_size=1000, chunk_overlap=200, is_string=False):
+async def encode_pdf_hierarchical(path, model, chunk_size=1000, chunk_overlap=200, is_string=False):
     """
     Asynchronously encodes a PDF book into a hierarchical vector store using OpenAI embeddings.
     Includes rate limit handling with exponential backoff.
@@ -52,7 +39,8 @@ async def encode_pdf_hierarchical(path, chunk_size=1000, chunk_overlap=200, is_s
 
 
     # Create document-level summaries
-    summary_llm = ChatOpenAI(base_url='http://localhost:11434/v1', temperature=0, model_name="llama3.2", max_tokens=4000, api_key='ollama')
+    # summary_llm = ChatOllama(base_url='http://localhost:11434/v1', temperature=0, model_name="llama3.2", max_tokens=4000)
+    summary_llm = ChatOpenAI(base_url='http://localhost:11434/v1', temperature=0, model_name="llama3.2", max_tokens=4000, api_key="Ollama")
     summary_chain = load_summarize_chain(summary_llm, chain_type="map_reduce")
     
     async def summarize_doc(doc):
@@ -98,7 +86,7 @@ async def encode_pdf_hierarchical(path, chunk_size=1000, chunk_overlap=200, is_s
 
     # Create embeddings
     # embeddings = OpenAIEmbeddings(base_url='http://localhost:11434/v1/embeddings', api_key='ollama')
-    embeddings = get_embedding_function()
+    embeddings = get_embedding_function(model)
 
     # Create vector stores asynchronously with rate limit handling
     async def create_vectorstore(docs):
