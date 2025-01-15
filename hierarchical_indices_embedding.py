@@ -7,7 +7,7 @@ from langchain_openai import ChatOpenAI
 from get_embedding_function import get_embedding_function
 from helper_functions import *
 
-async def encode_pdf_hierarchical(path, model, chunk_size=1000, chunk_overlap=200, is_string=False):
+async def encode_pdf_hierarchical(path, model, base_url, chunk_size=1000, chunk_overlap=200, is_string=False):
     """
     Asynchronously encodes a PDF book into a hierarchical vector store using OpenAI embeddings.
     Includes rate limit handling with exponential backoff.
@@ -39,8 +39,8 @@ async def encode_pdf_hierarchical(path, model, chunk_size=1000, chunk_overlap=20
 
 
     # Create document-level summaries
-    # summary_llm = ChatOllama(base_url='http://localhost:11434/v1', temperature=0, model_name="llama3.2", max_tokens=4000)
-    summary_llm = ChatOpenAI(base_url='http://localhost:11434/v1', temperature=0, model_name="llama3.2", max_tokens=4000, api_key="Ollama")
+    summary_llm = ChatOllama(base_url=f'{base_url}/v1', temperature=0, model_name="llama3.2", max_tokens=4000)
+    # summary_llm = ChatOpenAI(base_url=f'{base_url}/v1', temperature=0, model_name="llama3.2", max_tokens=4000, api_key="Ollama")
     summary_chain = load_summarize_chain(summary_llm, chain_type="map_reduce")
     
     async def summarize_doc(doc):
@@ -86,7 +86,7 @@ async def encode_pdf_hierarchical(path, model, chunk_size=1000, chunk_overlap=20
 
     # Create embeddings
     # embeddings = OpenAIEmbeddings(base_url='http://localhost:11434/v1/embeddings', api_key='ollama')
-    embeddings = get_embedding_function(model)
+    embeddings = get_embedding_function(model, base_url)
 
     # Create vector stores asynchronously with rate limit handling
     async def create_vectorstore(docs):
@@ -110,3 +110,7 @@ async def encode_pdf_hierarchical(path, model, chunk_size=1000, chunk_overlap=20
     )
 
     return summary_vectorstore, detailed_vectorstore
+
+if __name__ == '__main__':
+    PATH = "data/Understanding_Climate_Change.pdf"
+    asyncio.run(encode_pdf_hierarchical(PATH, 'granite3-dense:8b', 'http://127.0.0.1:11434'))

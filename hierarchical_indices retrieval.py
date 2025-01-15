@@ -6,7 +6,6 @@ from get_embedding_function import get_embedding_function
 
 from helper_functions import *
 
-PATH = "data/Understanding_Climate_Change.pdf"
 
 def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_summaries=5, k_chunks=1):
     """
@@ -40,14 +39,14 @@ def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_su
     
     return relevant_chunks
 
-async def main(model):
+async def main(model, base_url, path):
     if os.path.exists("vector_stores/summary_store") and os.path.exists("vector_stores/detailed_store"):
-        embeddings = get_embedding_function(model)
+        embeddings = get_embedding_function(model, base_url)
         summary_store = FAISS.load_local("vector_stores/summary_store", embeddings, allow_dangerous_deserialization=True)
         detailed_store = FAISS.load_local("vector_stores/detailed_store", embeddings, allow_dangerous_deserialization=True)
 
     else:
-        summary_store, detailed_store = await encode_pdf_hierarchical(path=PATH, model=model)
+        summary_store, detailed_store = await encode_pdf_hierarchical(path, model, base_url)
         summary_store.save_local("vector_stores/summary_store")
         detailed_store.save_local("vector_stores/detailed_store")
 
@@ -63,4 +62,5 @@ async def main(model):
 
 
 if __name__ == '__main__':
-    asyncio.run(main("granite3-dense:8b"))
+    PATH = "data/Understanding_Climate_Change.pdf"
+    asyncio.run(main('granite3-dense:8b', 'http://127.0.0.1:11434', PATH))
