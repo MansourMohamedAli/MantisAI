@@ -3,17 +3,18 @@ from dotenv import load_dotenv
 from langchain.chains.summarize.chain import load_summarize_chain
 from langchain.docstore.document import Document
 from langchain_ollama import ChatOllama
+from langchain_community.document_loaders.csv_loader import CSVLoader
 from langchain_openai import ChatOpenAI
 from get_embedding_function import get_embedding_function
 from helper_functions import *
 
-async def encode_pdf_hierarchical(path, model, base_url, chunk_size=1000, chunk_overlap=200, is_string=False):
+async def encode_pdf_hierarchical(path, model, base_url, chunk_size=1000, chunk_overlap=200):
     """
     Asynchronously encodes a PDF book into a hierarchical vector store using OpenAI embeddings.
     Includes rate limit handling with exponential backoff.
     
     Args:
-        path: The path to the PDF file.
+        path: The path to the csv file.
         chunk_size: The desired size of each text chunk.
         chunk_overlap: The amount of overlap between consecutive chunks.
         
@@ -23,24 +24,18 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=1000, chunk_
         2. Detailed chunks
     """
     
-    # Load PDF documents
-    if not is_string:
-        loader = PyPDFLoader(path)
-        documents = await asyncio.to_thread(loader.load)
-    else:
-        text_splitter = RecursiveCharacterTextSplitter(
-            # Set a really small chunk size, just to show.
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            length_function=len,
-            is_separator_regex=False,
-        )
-        documents = text_splitter.create_documents([path])
-
-
+    # Load CSV
+    loader = CSVLoader(file_path='./mantis.csv',
+        csv_args={
+        'delimiter': ',',
+        'quotechar': '"',
+        'fieldnames': ['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution']},
+        metadata_columns=['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution'])
+    documents = await asyncio.to_thread(loader.load)
+    
     # Create document-level summaries
-    summary_llm = ChatOllama(base_url=f'{base_url}/v1', temperature=0, model_name="llama3.2", max_tokens=4000)
-    # summary_llm = ChatOpenAI(base_url=f'{base_url}/v1', temperature=0, model_name="llama3.2", max_tokens=4000, api_key="Ollama")
+    # summary_llm = ChatOllama(base_url=f'{base_url}/v1', temperature=0, model_name="llama3.2", max_tokens=4000)
+    summary_llm = ChatOpenAI(base_url=f'{base_url}/v1', temperature=0, model_name="llama3.2", max_tokens=4000, api_key="Ollama")
     summary_chain = load_summarize_chain(summary_llm, chain_type="map_reduce")
     
     async def summarize_doc(doc):
@@ -54,21 +49,26 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=1000, chunk_
             A summarized Document object.
         """
         # Retry the summarization with exponential backoff
-        summary_output = await retry_with_exponential_backoff(summary_chain.ainvoke([doc]))
+        # summary_output = await retry_with_exponential_backoff(summary_chain.ainvoke([doc]))
+        summary_output = await summary_chain.ainvoke([doc])
         summary = summary_output['output_text']
         return Document(
             page_content=summary,
-            metadata={"source": path, "page": doc.metadata["page"], "summary": True}
+            # metadata={"source": path, "row": doc.metadata["row"], "summary": True}
+            # metadata={"source": path, "DR#": doc.metadata["DR#"], "Summary#": doc.metadata["Problem Summary"], "summary": True}
+            metadata={"source": path, "DR#": doc.metadata["DR#"], "summary": True}
         )
 
     # Process documents in smaller batches to avoid rate limits
     batch_size = 5  # Adjust this based on your rate limits
     summaries = []
+
     for i in range(0, len(documents), batch_size):
         batch = documents[i:i+batch_size]
         batch_summaries = await asyncio.gather(*[summarize_doc(doc) for doc in batch])
         summaries.extend(batch_summaries)
         await asyncio.sleep(1)  # Short pause between batches
+
 
     # Split documents into detailed chunks
     text_splitter = RecursiveCharacterTextSplitter(
@@ -81,8 +81,9 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=1000, chunk_
         chunk.metadata.update({
             "chunk_id": i,
             "summary": False,
-            "page": int(chunk.metadata.get("page", 0))
+            "DR#": chunk.metadata.get("DR#", 0)
         })
+        # print(chunk.metadata['DR#'])
 
     # Create embeddings
     # embeddings = OpenAIEmbeddings(base_url='http://localhost:11434/v1/embeddings', api_key='ollama')
@@ -113,4 +114,4 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=1000, chunk_
 
 if __name__ == '__main__':
     PATH = "data/Understanding_Climate_Change.pdf"
-    asyncio.run(encode_pdf_hierarchical(PATH, 'granite3-dense:8b', 'http://127.0.0.1:11434'))
+    asyncio.run(encode_pdf_hierarchical(PATH, 'llama3.2:latest', 'http://127.0.0.1:11434'))

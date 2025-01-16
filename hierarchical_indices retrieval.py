@@ -3,11 +3,9 @@ import os
 
 from hierarchical_indices_embedding import encode_pdf_hierarchical
 from get_embedding_function import get_embedding_function
-
 from helper_functions import *
 
-
-def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_summaries=5, k_chunks=1):
+def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_summaries=3, k_chunks=10):
     """
     Performs a hierarchical retrieval using the query.
 
@@ -28,18 +26,17 @@ def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_su
     relevant_chunks = []
     for summary in top_summaries:
         # For each summary, retrieve relevant detailed chunks
-        page_number = summary.metadata["page"]
-        page_filter = lambda metadata: metadata["page"] == page_number
+        dr_num = summary.metadata["DR#"]
+        dr_filter = lambda metadata: metadata["DR#"] == dr_num
         page_chunks = detailed_vectorstore.similarity_search(
             query, 
-            k=k_chunks, 
-            filter=page_filter
+            k=k_chunks,
+            filter=dr_filter
         )
         relevant_chunks.extend(page_chunks)
-    
     return relevant_chunks
 
-async def main(model, base_url, path):
+async def main(query, model, base_url, path):
     if os.path.exists("vector_stores/summary_store") and os.path.exists("vector_stores/detailed_store"):
         embeddings = get_embedding_function(model, base_url)
         summary_store = FAISS.load_local("vector_stores/summary_store", embeddings, allow_dangerous_deserialization=True)
@@ -50,17 +47,19 @@ async def main(model, base_url, path):
         summary_store.save_local("vector_stores/summary_store")
         detailed_store.save_local("vector_stores/detailed_store")
 
-    query = "What Life Lifelong learning initiatives are being proviced?"
     results = retrieve_hierarchical(query, summary_store, detailed_store)
 
     # Print results
     for chunk in results:
-        print(f"Page: {chunk.metadata['page']}")
-        print(f"Content: {chunk.page_content}...")  # Print first 100 characters
+        print(f"Page: {chunk.metadata['DR#']}")
+        print(chunk.metadata['Problem Description'])
         print("---")
+        print(chunk.metadata['Notes & Resolution'])
+        print("###")
 
 
 
 if __name__ == '__main__':
-    PATH = "data/Understanding_Climate_Change.pdf"
-    asyncio.run(main('granite3-dense:8b', 'http://127.0.0.1:11434', PATH))
+    PATH = "mantis.csv"
+    query = 'Thunder_SiteIO'
+    asyncio.run(main(query, 'qwen2.5-coder:14b', 'http://127.0.0.1:11434', PATH))
