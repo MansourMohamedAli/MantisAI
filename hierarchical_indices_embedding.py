@@ -8,7 +8,7 @@ from langchain_openai import ChatOpenAI
 from get_embedding_function import get_embedding_function
 from helper_functions import *
 
-async def encode_pdf_hierarchical(path, model, base_url, chunk_size=1000, chunk_overlap=200):
+async def encode_pdf_hierarchical(path, model, base_url, chunk_size=200, chunk_overlap=100):
     """
     Asynchronously encodes a PDF book into a hierarchical vector store using OpenAI embeddings.
     Includes rate limit handling with exponential backoff.
@@ -25,12 +25,18 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=1000, chunk_
     """
     
     # Load CSV
-    loader = CSVLoader(file_path='./mantis.csv',
-        csv_args={
-        'delimiter': ',',
-        'quotechar': '"',
-        'fieldnames': ['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution']},
-        metadata_columns=['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution'])
+    try:
+        loader = CSVLoader(file_path=path,
+            csv_args={
+            'delimiter': ',',
+            'quotechar': '"',
+            'fieldnames': ['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution']},
+            metadata_columns=['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution'],
+            content_columns=['Problem Summary', 'Problem Description', 'Notes & Resolution'],
+            encoding='utf-8')
+    except RuntimeError as e:
+        print(e)
+        quit()
     documents = await asyncio.to_thread(loader.load)
     
     # Create document-level summaries
@@ -52,6 +58,7 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=1000, chunk_
         # summary_output = await retry_with_exponential_backoff(summary_chain.ainvoke([doc]))
         summary_output = await summary_chain.ainvoke([doc])
         summary = summary_output['output_text']
+        print(f'{doc.metadata["DR#"]}: {summary}\n---\n')
         return Document(
             page_content=summary,
             # metadata={"source": path, "row": doc.metadata["row"], "summary": True}
@@ -113,5 +120,5 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=1000, chunk_
     return summary_vectorstore, detailed_vectorstore
 
 if __name__ == '__main__':
-    PATH = "data/Understanding_Climate_Change.pdf"
-    asyncio.run(encode_pdf_hierarchical(PATH, 'llama3.2:latest', 'http://127.0.0.1:11434'))
+    PATH = "mantis.csv"
+    asyncio.run(encode_pdf_hierarchical(PATH, 'phi4:latest', 'http://127.0.0.1:11434'))

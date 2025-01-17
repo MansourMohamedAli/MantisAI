@@ -22,6 +22,8 @@ def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_su
     
     # Retrieve top summaries
     top_summaries = summary_vectorstore.similarity_search(query, k=k_summaries)
+    # scores = summary_vectorstore.similarity_search_with_relevance_scores(query, k=k_summaries)
+    # print(scores)
     
     relevant_chunks = []
     for summary in top_summaries:
@@ -46,20 +48,19 @@ async def main(query, model, base_url, path):
         summary_store, detailed_store = await encode_pdf_hierarchical(path, model, base_url)
         summary_store.save_local("vector_stores/summary_store")
         detailed_store.save_local("vector_stores/detailed_store")
-
+        
+    # summary_store.similarity_search_with_relevance_scores
     results = retrieve_hierarchical(query, summary_store, detailed_store)
 
     # Print results
     for chunk in results:
-        print(f"Page: {chunk.metadata['DR#']}")
-        print(chunk.metadata['Problem Description'])
-        print("---")
-        print(chunk.metadata['Notes & Resolution'])
-        print("###")
-
+        print(f"DR#: {chunk.metadata['DR#']}")
+        # print(chunk.metadata['Problem Description'])
+        # print("---")
+        # print(chunk.metadata['Notes & Resolution'])
 
 
 if __name__ == '__main__':
     PATH = "mantis.csv"
-    query = 'Thunder_SiteIO'
-    asyncio.run(main(query, 'qwen2.5-coder:14b', 'http://127.0.0.1:11434', PATH))
+    query = 'My panel graphics are not working.'
+    asyncio.run(main(query, 'phi4:latest', 'http://127.0.0.1:11434', PATH))
