@@ -2,3 +2,4 @@ data/
 .vscode/
 *__pycache__/
 vector_stores/
+llm_config/config.json

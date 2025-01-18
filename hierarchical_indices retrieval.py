@@ -1,5 +1,6 @@
 import asyncio
 import os
+import json
 
 from hierarchical_indices_embedding import encode_pdf_hierarchical
 from get_embedding_function import get_embedding_function
@@ -35,19 +36,19 @@ def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_su
         relevant_chunks.extend(page_chunks)
     return relevant_chunks
 
-async def main(query, model, base_url, path):
-    if os.path.exists("vector_stores/summary_store") and os.path.exists("vector_stores/detailed_store"):
+async def main(query, model, base_url, path, summary_store_path, detailed_store_path, k_summaries, k_chunks,embedding_chunk_size,embedding_chunk_overlap ):
+    if os.path.exists(summary_store_path) and os.path.exists(detailed_store_path):
         embeddings = get_embedding_function(model, base_url)
-        summary_store = FAISS.load_local("vector_stores/summary_store", embeddings, allow_dangerous_deserialization=True)
-        detailed_store = FAISS.load_local("vector_stores/detailed_store", embeddings, allow_dangerous_deserialization=True)
+        summary_store = FAISS.load_local(summary_store_path, embeddings, allow_dangerous_deserialization=True)
+        detailed_store = FAISS.load_local(detailed_store_path, embeddings, allow_dangerous_deserialization=True)
 
     else:
-        summary_store, detailed_store = await encode_pdf_hierarchical(path, model, base_url)
-        summary_store.save_local("vector_stores/summary_store")
-        detailed_store.save_local("vector_stores/detailed_store")
+        summary_store, detailed_store = await encode_pdf_hierarchical(path, model, base_url, embedding_chunk_size, embedding_chunk_overlap)
+        summary_store.save_local(summary_store_path)
+        detailed_store.save_local(detailed_store_path)
         
     # summary_store.similarity_search_with_relevance_scores
-    results = retrieve_hierarchical(query, summary_store, detailed_store)
+    results = retrieve_hierarchical(query, summary_store, detailed_store, int(k_summaries), int(k_chunks))
 
     # Print results
     for chunk in results:
@@ -59,6 +60,11 @@ async def main(query, model, base_url, path):
 
 
 if __name__ == '__main__':
-    PATH = "mantis.csv"
-    query = 'My panel graphics are not working.'
-    asyncio.run(main(query, 'phi4:latest', 'http://127.0.0.1:11434', PATH))
+    config_path = "llm_config/config.json"
+    
+    with open(config_path) as f:
+        config_json = json.load(f)
+
+    config_values = config_json.values()
+    print(config_values)
+    asyncio.run(main(*config_values))
