@@ -5,7 +5,7 @@ from hierarchical_indices_embedding import encode_pdf_hierarchical
 from get_embedding_function import get_embedding_function
 from helper_functions import *
 
-def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_summaries=3, k_chunks=10):
+def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_summaries=3, k_chunks=50):
     """
     Performs a hierarchical retrieval using the query.
 
@@ -22,9 +22,6 @@ def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_su
     
     # Retrieve top summaries
     top_summaries = summary_vectorstore.similarity_search(query, k=k_summaries)
-    # scores = summary_vectorstore.similarity_search_with_relevance_scores(query, k=k_summaries)
-    # print(scores)
-    
     relevant_chunks = []
     for summary in top_summaries:
         # For each summary, retrieve relevant detailed chunks
@@ -54,10 +51,11 @@ async def main(query, model, base_url, path):
 
     # Print results
     for chunk in results:
-        print(f"DR#: {chunk.metadata['DR#']}")
-        # print(chunk.metadata['Problem Description'])
+        print(chunk)
+        # print(f"DR#: {chunk.metadata['DR#']}")
+    #     print(chunk.metadata['Problem Description'])
+    #     print(chunk.metadata['Notes & Resolution'])
         # print("---")
-        # print(chunk.metadata['Notes & Resolution'])
 
 
 if __name__ == '__main__':

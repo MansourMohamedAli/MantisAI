@@ -1,0 +1,105 @@
+[25120] On October 16th, 2024, a simulator experienced an unexpected freeze during the second LORP run due to an ICCM datalink failure, causing unresponsive controls for about two minutes. Although it resumed normal operation and was not replicated in subsequent validation by @ppham on January 14th, 2025, or during an actual exam run, the defect report (DR) was closed. However, @jclark recommended collecting data if the issue reoccurs in future validations for troubleshooting purposes.
+[25119] On October 16, 2024, a THOR abort occurred during the first LORP run due to an ICCM datalink failure, causing simulator board controls and ovation to become unresponsive for two minutes. The simulator resumed normal operation afterward, and the issue was not replicated in later tests or exams, leading to its closure as a defect report on January 14, 2025. Future reoccurrences during validation of the same scenario should prompt data collection for troubleshooting.
+[22964] Farley plans to convert an existing 4160V XElectric model to a ThunderElectric model as part of a switchyard upgrade, utilizing remaining maintenance hours for initial setup. The project's completion is uncertain due to current agreement constraints and depends on available hours and discussions with CORYS. A recent teleconference suggests Farley might close the request since the upgrade fits within the site's 3-year plan (Note & Resolution by @jclark dated 01/13/2025).
+[25588] The concern involves identifying LO Gross Fail lights on the Pressure Monitoring Unit (PMU501) in panel 601. According to specifications, ZLOADB21PMU501(P1) to P11 are trip lights, P12 to P22 are gross fail lights, and P23 is a calibration light. Confusion arises because two visible lights—one above and one below the meter—make it unclear if the top light is the gross fail light. Simulators confirm correct functionality of these lights. Additionally, there's an inquiry about whether this issue duplicates DR 25468.
+[25566] A recent Executive crash occurred during a scenario involving IC 67, replicable after about one minute of execution. The issue arose post-restoration of cooling water following a LOCA, without using MELCOR for analysis. It was found that the reactor vessel nearly depleted of water and cladding temperatures exceeded 1850°F, leading to core degradation from EOP to SAMG conditions. It is suggested to revise the scenario or use MELCOR for accurate modeling if needed. No further action was deemed necessary at this time.
+[16712] The task aimed to enhance grid reactive load modeling between two power plant units by demonstrating how manual voltage regulation on one unit affects another through VAR adjustments. Current models failed to accurately simulate this interaction. Attempts to modify the phase angle of external AC sources and adjust transmission line impedances showed limited success, with impedance values (1e-5, 25.0) resulting in a 10:1 correlation between VAR changes across units instead of the desired 1:1 ratio. Further modifications risk unintended simulator behavior and require extensive testing. The Simulator Review Committee has accepted these limitations as part of the current model's constraints, deeming additional refinement unnecessary at present but open to future investigation if needed.
+[25560] During a FAT test, insight point values in the DIN12 file did not update despite being visible on the Weidmuller webserver. On January 7, 2025, it was discovered that code responsible for assigning AI hardware values to software had been accidentally deleted during integration. The issue was resolved by modifying Thunder_SiteIO.c, and @ttarver confirmed its resolution with a subsequent SAT test on January 13, 2025.
+[25561] During FAT testing, insight points in the DIN29 file did not update their values despite being visible on the Weidmuller webserver for the AI card. On January 7, 2025, it was discovered that code responsible for assigning AI hardware values to software had been accidentally deleted during integration. The issue was resolved by modifying Thunder_SiteIO.c, and confirmation of resolution was provided on January 13, 2025, following successful SAT testing.
+[25562] During FAT testing, the insight point ZDIXI01179P4(1) in the DIN29b file did not change as expected due to an issue on the Weidmuller webserver for a DI card. The problem was resolved by updating the point to ZDIXI01179P4(2) in the Din29b.tis file, as noted by @schan on January 7, 2025. Subsequent testing confirmed the fix, with verification by @ttarver on January 13, 2025.
+[25563] During FAT testing, the insight value for point ZDITIPEP3(1) in the DIN35 file did not change as expected. This issue was identified on the Weidmuller webserver and resolved by updating the point to ZDITIPEP4(1) and modifying the DIN35.tis file, with documentation provided by Schan on January 7, 2025.
+[24905] The issue involved the E12-3 jockey pump's dynamics not being affected when an override was initiated. The problem timeline includes:
+
+1. **@mmcadory (01/12/2025):** Noted that initiating an override did not impact pump operation.
+2. **@dofarrell (10/26/2024):** Updated graphics were distributed to relevant folders and test loads.
+3. **@jsudario (10/10/2024):** Corrected a coding error from `.NOT.e12_c03(3)` to `!e12_c03(3)`, resolving the dynamic issue.
+4. **@jclark (private, 10/09/2024):** Recommended updating P&ID drawings as necessary under CORYS' scope.
+5. **@jsudario (private, 10/09/2024):** Explained that panel lights are controlled by relay logic instead of code, affecting pump indicators and suggested control logic updates.
+6. **@rgoldman (09/18/2024):** Confirmed the issue with E12-3 RHR C jockey pump not aligning with panel indications.
+7. **@jclark (09/09/2024):** Suggested checking if the problem was related to graphics or model upgrades.
+
+The resolution involved correcting a coding error and updating control logic to match relay-based indicators, resolving the issue.
+[24583] The issue involves an overcurrent trip problem with MF r21139d on bus 28AG, where inserting the MF fails to de-energize the bus. Team members documented various steps and insights:
+
+1. **@mmcadory (01/12/2025)** noted that inserting the MF had no effect.
+2. **@rgoldman (09/25/2024)** recommended retesting using CorysDR24573.docx.
+3. **@mmcadory (09/13/2024)** referred to notes in 24573 for details.
+4. **@rgoldman (09/02/2024)** suggested checking DR 24585 for changes and retesting.
+5. **@jritter (07/30/2024)** identified a potential logic issue from DR-210015.
+6. **@mellis (07/30/2024)** explained that de-energizing 28AG should set P807 voltage indicator R606 to 0, but it remains active if MF r21139d is inserted or breaker 2801 trips with HS.
+7. **@asharma (07/05/2024)** implemented changes in EDSManOut to ensure variable R21IU416(6) was driven correctly.
+
+The resolution involved updating system logic and configuration to properly de-energize bus 28AG under the necessary conditions.
+[25547] The T46B001B and T46B005A room coolers on P870-1C, 7C were underperforming with a flowrate of 3200 cfm instead of the set 4600 cfm. On January 11, 2025, this issue was resolved by updating the Init.dat file with DR 25547 information to retune the coolers and achieve the desired flowrate. Reference flow rates for related paths were also adjusted to 4600 cfm, and an initialization segment (dr25547.dat) was added above 'TEMPORARY INITIALIZATIONS' in the INIT.DAT file.
+[25136] The U41B003 unit's flow rate of 8300 scfm exceeded its design specification of 1500 scfm. The issue was resolved by adjusting duct losses and modifying flows near U41N003 to reach the target of 1500 cfm (flows 3229-3232; sh.158). Updates were made to the Init.dat file, incorporating a segment from dr25136.dat above 'TEMPORARY INITIALIZATIONS' for testing. The resolution was documented by Mellis on January 11, 2025, and confirmed by Fuller and Farrell in early January 2025.
+[25544] The problem involved diesel generators (DGs) in Divisions 1 and 2 operating at higher speeds than necessary during start-up and parallel operations, requiring only minor governor adjustments for synchronization. Additionally, the MVAR meter failed to respond appropriately to load changes. The standard procedure for starting and paralleling DGs included steps like initiating the generator, adjusting voltage and speed settings, and closing the output breaker under specific conditions.
+
+To resolve these issues, system parameters were adjusted to allow voltage droop during MVAR changes, ensuring DGs reached their rated speeds without exceeding them. Key parameter updates in `init.dat` included setting P75KE99(1), (2), (3) to 35.0 and adjusting p75ke7 values for each division. These changes are documented in DR 25544 and are prepared for retesting.
+[25438] **Problem Summary:**  
+The issue P72F150A/B involved the failure of cooling the CTMT steam tunnel using drywell chill water through specific valves, with no temperature change upon closing these valves.
+
+**Resolution Steps:**
+
+1. **Database and Code Updates:**  
+   - Updated database and source code to fix integration errors related to PSW cooling water flow.
+   - Added two new variables via a PDM add file (dr25438.add).
+   - Modified THORCTMTMISC.F to calculate an intermediate variable for cooling flow based on valve positions.
+
+2. **Integration and Testing:**  
+   - Integrated revised code into Rev42 of the THOR nodal diagrams.
+   - Generated a new version of THORIN.F reflecting these updates.
+
+3. **Legacy Code Adjustments:**  
+   - Removed an unnecessary legacy interlock that stopped cooling flow below 80°F after consulting with the test team.
+
+4. **Additional Corrections:**  
+   - Corrected chill water interface flow error to the OC steam tunnel cooler.
+   - Adjusted heat transfer settings for the OC Stm Tunnel cooler to maintain target temperatures of 121-122°F.
+   - Changes included in GrandGulfTHOR_REV42.thd, available on the FTP site.
+
+5. **Finalization:**  
+   - Appended necessary code and data adjustments to INIT.DAT under 'TEMPORARY INITIALIZATIONS' for testing readiness.
+[23150] The issue involved incorrect labeling on the P844 graphic, where two ARMs (D21-RITS-K649) were mistakenly identified instead of K650 for a May 1993 Post Accident Sample Panel. The problem was resolved by updating labels and drawings across multiple machines (ggews4, Mickey's, and Marty's). Changes were implemented by @rgoldman on November 6, 2024, confirmed by @jsudario on November 5, 2024, and noted by @mmcadory on January 11, 2025.
+[24057] The project involves implementing remote control functions for specific doors and hatches at a turbine building and radwaste facility as part of DR 25577. As of October 1, 2025, Mellis confirms these updates have been captured in the directive, while Farrell indicates readiness for testing based on similar resolved directives. Earlier communications revealed uncertainties about boundary settings from drawing A0012, necessitating model updates (Goldman, August 5, 2024). Jorge added the radwaste building roll-up door and turbine hatches to the model but noted a missing rollup door at elevation 133' in the railroad area due to its absence in drawing A-0012. Clark reassigned the task for further updates on October 18, 2024. The resolution involves updating drawings and models to ensure all relevant doors are accurately represented and controlled remotely.
+[25040] An average drywell temperature (M713002) was found to be 10 degrees higher than expected on November 20, 2024, due to a calculation error in the FCT71.FOR code related to "azimuth" assignments. The issue was identified and corrected by R2, with confirmation from @bpanfil on November 8, who also noted discrepancies between manual calculations and SPDS outputs. The updated code was uploaded to MANTIS and compiled using a batch file in the specified directory. The problem was resolved with updated site data as of November 14, 2024.
+[25134] The turbine building differential pressure (DP) system experienced discrepancies, notably with boundary cell 2501 showing lower pressure compared to others, and panel P842 indicating a low DP of -0.5" wc. The issue was addressed through several updates:
+
+- On January 10, 2025, Mellis adjusted the Saturday TB DP to -0.03", resolving discrepancies without outstanding deferred recommendations (DRs).
+- Farrell confirmed that related DR changes and operational expertise achieved the correct DP target of approximately -0.05 inH2O.
+- Earlier reports included Mellis noting a +0.25" wc indication on January 2, 2025, and McCadory stating fan speeds were stable but requiring door positioning and flow balancing as per an open DR on October 19, 2024.
+- On October 17, 2024, Goldman implemented changes from DR 24769 and additional adjustments, with Panfil confirming these fixes addressed a duplicate issue.
+
+The resolution involved adjusting DP system settings and aligning operational parameters.
+[25575] The issue involves ThunderView/IA/DCS drawings inaccurately showing valve positions at 0.00 when they are actually open around 50%. This occurs due to the presence of a `{CMPD}_{BLOCK2}_OUT` value without an associated local `BLOCK2` variable, affecting only heater-related drawings. A temporary fix involved manually adding a `BLOCK2` variable matching the existing `BLOCK`. Shapes labeled `FBM_RO1` are problematic, unlike similar shapes such as `AIN_CV3`. This issue is linked to issue 25576 and requires further investigation to prevent recurrence.
+[25161] Several 133' Turbine Building doors are incorrectly positioned. Doors EL326_133 and EL315_133 are open at 23% instead of the required 100%, while Door EL308_2_33 should be closed but is also at 23%. Additional doors (EL301_133, EL318_133, EL319_133, EL304_133, EL312_3_133, and EL312_2_133) need to be closed. The ICDRIVER.FOR program was recompiled to correct these positions, achieving a near-target negative TB deltaP. Some doors were reset after previous adjustments from related Design Requests (DRs). Further review of DR25134 and DR2479 is needed for potential additional tuning.
+[25085] The exhaust fan (u41c001) in the battery room is malfunctioning, showing a speed of 895 rpm but producing no airflow. There's no manual start option available. Updates for testing were initiated by @mellis and @rfuller on January 10, 2025. On January 3, 2025, @djackson recommended appending `DR25085.dat` to `init.dat` and checking the remote control for fan u41c001 in the ED remotes table after applying fixes from DR 25122.
+[25122] **Problem Summary:** The issue V41B010 involved a non-operational fan intended to deliver 6700 CFM without a start mechanism.
+
+**Resolution Notes:**
+
+- **@mellis (01/10/2025):** Confirmed that B010 was functioning correctly, while C004/C005 were not. Closed the defect report for B010.
+  
+- **@rfuller (01/10/2025):** Added remote functions to the Lightning.mdb database, marking it ready for testing.
+
+- **@djackson (01/03/2025):** Developed a comprehensive table of remotes for THSMALLMOTOR fans. Updated DR25122REMOTES.xlsx in LightningDB.mdb and instructed to activate breaker MCC-21B41:17 HVNSV41B010, resulting in the fan achieving ~6760 CFM. This solution also resolved control issues related to Dr 25085.
+
+Overall, the problem was addressed by implementing remote functions and activating the necessary breaker, ensuring the fan operated as intended.
+[25546] The ECCS room cooler flowrates were significantly above specified design values for coolers T51B001 to T51B006. The issue was resolved by adjusting the cooling fans' flow areas to align with target rates from the SSD. Updates included changes to Init.dat and appending dr25546.dat, with contributions from Mellis, Fuller, and Farrell between January 8-10, 2025.
+[24796] The issue involves charcoal vault defrosting fans V41C001A/B linked to RW Bldg Exhaust Fans HS. Activating these exhaust fans increases the speed and airflow of the defrosting fans. A blind flange is recommended for fan suction during operations as per P&ID M0047A. These fans are used only during extended outages when charcoal vault doors are frequently open, not during normal startup/shutdown due to flow blanking per P&ID guidelines. The proposed resolution is to remove the flow paths and fans entirely by zeroing flowpath areas and associated cell constants, with updates planned for REV 41 of the nodal sheet. Implementation requires appending DR24796 to init.dat.
+[25476] The DRWL AREA EQUIP DR SMP LEAK HI P601-22A-B2 alarm was triggered during startup due to logic inconsistencies in controlling sump pumps and their timers. To resolve this, the timer logic was adjusted to start with the pump, new database variables were added via 'dr25476.add', and constants from 'dr25476.dat' were appended to INIT.DAT. These changes were integrated into E31I2.FOR to prevent future false alarms. The resolution was implemented by @rgoldman on 12/09/2024, following notes from @dofarrell on 12/08/2024 and a summary by @mellis on 01/09/2025.
+[16486] The document details efforts to enhance thermal-hydraulic modeling of a nuclear reactor's containment system, focusing on heat transfer between gas and liquid phases. Key adjustments include reducing the interfacial area per unit volume by tenfold and increasing the heat transfer coefficient fivefold for cells 119-122 to align model predictions with experimental data. It also covers tuning the containment response to specific malfunctions like Malf CLG08C, involving parameter modifications such as `thkaflo` and `thkdhy`. Additionally, priority issues include tasks related to boric acid transport, RCS seals tuning, RCS volume adjustments, and further containment response tuning. These efforts aim to improve model accuracy in simulating reactor behavior under various conditions.
+[25493] The summary addresses discrepancies in dissolved oxygen (DO) readings from Recorder G33 - R611 compared to the chemistry department's data. To resolve this, several updates were implemented:
+
+1. **Feedback Integration**: Site load configurations were adjusted based on feedback from R.Fuller and tested on platforms.
+2. **Code Adjustments**: The ICDRIVER.FOR code was modified to set remote FW233 to 'ON' for all Integrated Circuits (ICs).
+3. **Model Tuning**: Equilibrium O2 concentrations in the model were recalibrated to match target values, correcting interface errors and introducing new variables.
+4. **Initialization Enhancements**: O2 concentration initialization at key cells was improved using updated files like THORBOPOUT.F and G33I2.FOR to speed up equilibrium.
+
+These efforts involved collaboration among team members @mellis, @dofarrell, and R.Fuller.
+[25478] An executive crash occurred during an attempt to restore the Reactor Water Cleanup (RWCU) following its isolation on Delta flow. The incident happened as valves were being opened, leading to a system failure.
+
+The issue arose when the RWCU was isolated and then attempted restoration, causing an executive crash during valve operations. Feedback from R. Fuller indicated that changes were integrated into GGEWS4 at the site and deployed for testing.
+
+In low pressure and power conditions, starting a RWCU pump led to a THOR abort due to 'numerical water hammer,' caused by rapid filling of partially voided cells as the pump started, resulting in pressure spikes. Mitigation involved adjusting donor constants in flows connecting u-tube tops in non-regen heat exchangers and increasing iterations for pressure calculations, allowing RWCU pumps to start under low-pressure conditions.
+
+IC 251 was identified as a reference point for this issue. A DR reset to IC 253 resulted in a crash approximately 37 seconds later, with IC 252 showing valves ready to start the pump. Additional ICs were provided for further analysis, and a screenshot of the system blowup was mentioned, with plans to follow up after uploading relevant ICs.

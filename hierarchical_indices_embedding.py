@@ -7,8 +7,9 @@ from langchain_community.document_loaders.csv_loader import CSVLoader
 from langchain_openai import ChatOpenAI
 from get_embedding_function import get_embedding_function
 from helper_functions import *
+from langchain.text_splitter import CharacterTextSplitter
 
-async def encode_pdf_hierarchical(path, model, base_url, chunk_size=200, chunk_overlap=100):
+async def encode_pdf_hierarchical(path, model, base_url, chunk_size=200, chunk_overlap=0):
     """
     Asynchronously encodes a PDF book into a hierarchical vector store using OpenAI embeddings.
     Includes rate limit handling with exponential backoff.
@@ -41,7 +42,7 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=200, chunk_o
     
     # Create document-level summaries
     # summary_llm = ChatOllama(base_url=f'{base_url}/v1', temperature=0, model_name="llama3.2", max_tokens=4000)
-    summary_llm = ChatOpenAI(base_url=f'{base_url}/v1', temperature=0, model_name="llama3.2", max_tokens=4000, api_key="Ollama")
+    summary_llm = ChatOpenAI(base_url=f'{base_url}/v1', temperature=0, model_name=model, max_tokens=4000, api_key="Ollama")
     summary_chain = load_summarize_chain(summary_llm, chain_type="map_reduce")
     
     async def summarize_doc(doc):
@@ -63,7 +64,7 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=200, chunk_o
             page_content=summary,
             # metadata={"source": path, "row": doc.metadata["row"], "summary": True}
             # metadata={"source": path, "DR#": doc.metadata["DR#"], "Summary#": doc.metadata["Problem Summary"], "summary": True}
-            metadata={"source": path, "DR#": doc.metadata["DR#"], "summary": True}
+            metadata={"source": path, "DR#": int(doc.metadata["DR#"]), "summary": True}
         )
 
     # Process documents in smaller batches to avoid rate limits
@@ -77,8 +78,13 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=200, chunk_o
         await asyncio.sleep(1)  # Short pause between batches
 
 
+    with open('generated_summaries.txt', 'w') as f:
+        for summary in summaries:
+            f.write(f'[{summary.model_dump()['metadata']['DR#']}] {summary.model_dump()['page_content']}\n')
+
     # Split documents into detailed chunks
-    text_splitter = RecursiveCharacterTextSplitter(
+    # text_splitter = RecursiveCharacterTextSplitter(
+    text_splitter = CharacterTextSplitter(
         chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len
     )
     detailed_chunks = await asyncio.to_thread(text_splitter.split_documents, documents)
@@ -88,9 +94,8 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=200, chunk_o
         chunk.metadata.update({
             "chunk_id": i,
             "summary": False,
-            "DR#": chunk.metadata.get("DR#", 0)
+            "DR#": int(chunk.metadata.get("DR#", 0))
         })
-        # print(chunk.metadata['DR#'])
 
     # Create embeddings
     # embeddings = OpenAIEmbeddings(base_url='http://localhost:11434/v1/embeddings', api_key='ollama')
@@ -107,9 +112,9 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=200, chunk_o
         Returns:
             A FAISS vector store containing the embedded documents.
         """
-        return await retry_with_exponential_backoff(
-            asyncio.to_thread(FAISS.from_documents, docs, embeddings)
-        )
+        # return await retry_with_exponential_backoff(
+        #     asyncio.to_thread(FAISS.from_documents, docs, embeddings)
+        return await asyncio.to_thread(FAISS.from_documents, docs, embeddings)
 
     # Generate vector stores for summaries and detailed chunks concurrently
     summary_vectorstore, detailed_vectorstore = await asyncio.gather(
