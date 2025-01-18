@@ -8,8 +8,9 @@ from langchain_openai import ChatOpenAI
 from get_embedding_function import get_embedding_function
 from helper_functions import *
 from langchain.text_splitter import CharacterTextSplitter
+from pathlib import Path
 
-async def encode_pdf_hierarchical(path, model, base_url, chunk_size=200, chunk_overlap=0):
+async def encode_pdf_hierarchical(path, model, base_url, output_path, chunk_size=200, chunk_overlap=0):
     """
     Asynchronously encodes a PDF book into a hierarchical vector store using OpenAI embeddings.
     Includes rate limit handling with exponential backoff.
@@ -78,7 +79,7 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=200, chunk_o
         await asyncio.sleep(1)  # Short pause between batches
 
 
-    with open('generated_summaries.txt', 'w') as f:
+    with open((Path(output_path) / 'generated_summaries.txt'), 'w') as f:
         for summary in summaries:
             f.write(f'[{summary.model_dump()['metadata']['DR#']}] {summary.model_dump()['page_content']}\n')
 
@@ -125,5 +126,5 @@ async def encode_pdf_hierarchical(path, model, base_url, chunk_size=200, chunk_o
     return summary_vectorstore, detailed_vectorstore
 
 if __name__ == '__main__':
-    PATH = "mantis.csv"
-    asyncio.run(encode_pdf_hierarchical(PATH, 'phi4:latest', 'http://127.0.0.1:11434'))
+    PATH = "data/mantis.csv"
+    asyncio.run(encode_pdf_hierarchical(PATH, 'llama3.2:latest', 'http://127.0.0.1:11434', 'output/'))

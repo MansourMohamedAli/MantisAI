@@ -13,10 +13,10 @@ def get_mantis_csv(export_path):
     csv_df.set_index('Id', inplace=True)
 
     csv_to_llm_df = csv_df[['Summary', 'Description', 'Notes']]
-    csv_to_llm_df = csv_to_llm_df.head(30)
+    csv_to_llm_df = csv_to_llm_df.head(5)
     return csv_to_llm_df.to_csv(export_path,header=False)
     # return csv_to_llm_df.to_csv(export_path)
 
 
 if __name__ == "__main__":
-    print(get_mantis_csv('mantis.csv'))
+    get_mantis_csv('data/mantis.csv')

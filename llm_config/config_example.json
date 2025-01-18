@@ -2,11 +2,13 @@
     "query": "My panel graphics are not working.",
     "model": "phi4:latest",
     "base_url": "http://127.0.0.1:11434",
-    "data_path": "mantis.csv",
+    "data_path": "data/mantis.csv",
     "summary_store_path":"vector_stores/summary_store",
     "detailed_store_path":"vector_stores/detailed_store",
+    "output_path" : "output/",
     "k_summaries": 3,
     "k_chunks": 50,
     "embedding_chunk_size": 200,
     "embedding_chunk_overlap": 0
+
 }

@@ -36,14 +36,14 @@ def retrieve_hierarchical(query, summary_vectorstore, detailed_vectorstore, k_su
         relevant_chunks.extend(page_chunks)
     return relevant_chunks
 
-async def main(query, model, base_url, path, summary_store_path, detailed_store_path, k_summaries, k_chunks,embedding_chunk_size,embedding_chunk_overlap ):
+async def main(query, model, base_url, path, summary_store_path, detailed_store_path, output_path, k_summaries, k_chunks, embedding_chunk_size, embedding_chunk_overlap):
     if os.path.exists(summary_store_path) and os.path.exists(detailed_store_path):
         embeddings = get_embedding_function(model, base_url)
         summary_store = FAISS.load_local(summary_store_path, embeddings, allow_dangerous_deserialization=True)
         detailed_store = FAISS.load_local(detailed_store_path, embeddings, allow_dangerous_deserialization=True)
 
     else:
-        summary_store, detailed_store = await encode_pdf_hierarchical(path, model, base_url, embedding_chunk_size, embedding_chunk_overlap)
+        summary_store, detailed_store = await encode_pdf_hierarchical(path, model, base_url, output_path, int(embedding_chunk_size), int(embedding_chunk_overlap))
         summary_store.save_local(summary_store_path)
         detailed_store.save_local(detailed_store_path)
         
@@ -52,16 +52,16 @@ async def main(query, model, base_url, path, summary_store_path, detailed_store_
 
     # Print results
     for chunk in results:
-        print(chunk)
-        # print(f"DR#: {chunk.metadata['DR#']}")
-    #     print(chunk.metadata['Problem Description'])
-    #     print(chunk.metadata['Notes & Resolution'])
+        # print(chunk)
+        print(f"DR#: {chunk.metadata['DR#']}")
+        print(chunk.metadata['Problem Description'])
+        print(chunk.metadata['Notes & Resolution'])
         # print("---")
 
 
 if __name__ == '__main__':
     config_path = "llm_config/config.json"
-    
+
     with open(config_path) as f:
         config_json = json.load(f)
 
