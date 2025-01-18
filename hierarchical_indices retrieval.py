@@ -61,7 +61,6 @@ async def main(query, model, base_url, path, summary_store_path, detailed_store_
 
 if __name__ == '__main__':
     config_path = "llm_config/config.json"
-
     with open(config_path) as f:
         config_json = json.load(f)
 

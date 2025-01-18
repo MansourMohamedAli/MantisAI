@@ -10,5 +10,4 @@
     "k_chunks": 50,
     "embedding_chunk_size": 200,
     "embedding_chunk_overlap": 0
-
 }
