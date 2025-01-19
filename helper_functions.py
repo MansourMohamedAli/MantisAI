@@ -2,8 +2,9 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
+# from langchain_core.pydantic_v1 import BaseModel, Field
 from pydantic import BaseModel, Field
-from langchain_core import prompts
+from langchain_core.prompts import PromptTemplate
 from openai import RateLimitError
 from typing import List
 from rank_bm25 import BM25Okapi
@@ -13,6 +14,10 @@ import random
 import textwrap
 import numpy as np
 from enum import Enum
+
+from langchain_community.document_loaders.csv_loader import CSVLoader
+from langchain.text_splitter import CharacterTextSplitter
+from get_embedding_function import get_embedding_function
 
 
 def replace_t_with_space(list_of_documents):
@@ -67,14 +72,51 @@ def encode_pdf(path, chunk_size=1000, chunk_overlap=200):
         chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len
     )
     texts = text_splitter.split_documents(documents)
-    cleaned_texts = replace_t_with_space(texts)
+    # cleaned_texts = replace_t_with_space(texts)
 
     # Create embeddings and vector store
     embeddings = OpenAIEmbeddings()
-    vectorstore = FAISS.from_documents(cleaned_texts, embeddings)
+    vectorstore = FAISS.from_documents(texts, embeddings)
 
     return vectorstore
 
+def encode_csv(path, chunk_size=1000, chunk_overlap=200):
+    """
+    Encodes a PDF book into a vector store using OpenAI embeddings.
+
+    Args:
+        path: The path to the PDF file.
+        chunk_size: The desired size of each text chunk.
+        chunk_overlap: The amount of overlap between consecutive chunks.
+
+    Returns:
+        A FAISS vector store containing the encoded book content.
+    """
+
+    # Load PDF documents
+    loader = CSVLoader(file_path=path,
+        csv_args={
+        'delimiter': ',',
+        'quotechar': '"',
+        'fieldnames': ['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution']},
+        metadata_columns=['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution'],
+        content_columns=['Problem Summary', 'Problem Description', 'Notes & Resolution'],
+        encoding='utf-8')
+    documents = loader.load()
+
+    # Split documents into chunks
+    text_splitter = CharacterTextSplitter(
+        chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len
+    )
+    texts = text_splitter.split_documents(documents)
+    # cleaned_texts = replace_t_with_space(texts)
+
+    # Create embeddings and vector store
+    embeddings = get_embedding_function("llama3.2:latest", "http://127.0.0.1:11434")
+    print(texts)
+    vectorstore = FAISS.from_documents(texts, embeddings)
+
+    return vectorstore
 
 def encode_from_string(content, chunk_size=1000, chunk_overlap=200):
     """
@@ -172,7 +214,7 @@ def create_question_answer_from_context_chain(llm):
     """
 
     # Create a PromptTemplate object with the specified template and input variables
-    question_answer_from_context_prompt = prompts.PromptTemplate(
+    question_answer_from_context_prompt = PromptTemplate(
         template=question_answer_prompt_template,
         input_variables=["context", "question"],
     )
