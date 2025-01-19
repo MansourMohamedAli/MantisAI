@@ -129,7 +129,7 @@ class RAGPipeline:
             return_source_documents=True
         )
 
-        result = qa_chain({"query": query})
+        result = qa_chain.invoke({"query": query})
 
         print(f"\nQuestion: {query}")
         print(f"Answer: {result['result']}")
@@ -143,7 +143,7 @@ class RAGPipeline:
 def parse_args():
     parser = argparse.ArgumentParser(description="RAG Pipeline")
     parser.add_argument("--path", type=str, default="data/mantis.csv", help="Path to the document")
-    parser.add_argument("--query", type=str, default='What are the impacts of climate change?', help="Query to ask")
+    parser.add_argument("--query", type=str, default='how to fix failing lights?', help="Query to ask")
     parser.add_argument("--retriever_type", type=str, default="reranker", choices=["reranker", "cross_encoder"],
                         help="Type of retriever to use")
     return parser.parse_args()
@@ -156,14 +156,14 @@ if __name__ == "__main__":
 
     # Demonstrate the reranking comparison
     # Example that demonstrates why we should use reranking
-    chunks = [
-        "The capital of France is great.",
-        "The capital of France is huge.",
-        "The capital of France is beautiful.",
-        """Have you ever visited Paris? It is a beautiful city where you can eat delicious food and see the Eiffel Tower. 
-        I really enjoyed all the cities in France, but its capital with the Eiffel Tower is my favorite city.""",
-        "I really enjoyed my trip to Paris, France. The city is beautiful and the food is delicious. I would love to visit again. Such a great capital city."
-    ]
-    docs = [Document(page_content=sentence) for sentence in chunks]
+    # chunks = [
+    #     "The capital of France is great.",
+    #     "The capital of France is huge.",
+    #     "The capital of France is beautiful.",
+    #     """Have you ever visited Paris? It is a beautiful city where you can eat delicious food and see the Eiffel Tower. 
+    #     I really enjoyed all the cities in France, but its capital with the Eiffel Tower is my favorite city.""",
+    #     "I really enjoyed my trip to Paris, France. The city is beautiful and the food is delicious. I would love to visit again. Such a great capital city."
+    # ]
+    # docs = [Document(page_content=sentence) for sentence in chunks]
 
-    compare_rag_techniques(query="what is the capital of france?", docs=docs)
+    # compare_rag_techniques(query="what is the capital of france?", docs=docs)
