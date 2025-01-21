@@ -72,15 +72,15 @@ def encode_pdf(path, chunk_size=1000, chunk_overlap=200):
         chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len
     )
     texts = text_splitter.split_documents(documents)
-    # cleaned_texts = replace_t_with_space(texts)
+    cleaned_texts = replace_t_with_space(texts)
 
     # Create embeddings and vector store
     embeddings = OpenAIEmbeddings()
-    vectorstore = FAISS.from_documents(texts, embeddings)
+    vectorstore = FAISS.from_documents(cleaned_texts, embeddings)
 
     return vectorstore
 
-def encode_csv(path, chunk_size=1000, chunk_overlap=200):
+def encode_csv(path, chunk_size=1000, chunk_overlap=0):
     """
     Encodes a PDF book into a vector store using OpenAI embeddings.
 
@@ -113,7 +113,6 @@ def encode_csv(path, chunk_size=1000, chunk_overlap=200):
 
     # Create embeddings and vector store
     embeddings = get_embedding_function("llama3.2:latest", "http://127.0.0.1:11434")
-    print(texts)
     vectorstore = FAISS.from_documents(texts, embeddings)
 
     return vectorstore
