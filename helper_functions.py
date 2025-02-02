@@ -109,7 +109,6 @@ def encode_csv(path, model, chunk_size=1000, chunk_overlap=0):
         chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len
     )
     texts = text_splitter.split_documents(documents)
-    # cleaned_texts = replace_t_with_space(texts)
 
     # Create embeddings and vector store
     embeddings = get_embedding_function(model, "http://127.0.0.1:11434")

@@ -9,10 +9,49 @@ from langchain_core.prompts import PromptTemplate
 from sentence_transformers import CrossEncoder
 from pydantic import BaseModel, Field
 from langchain_community.document_loaders.csv_loader import CSVLoader
+from langchain.text_splitter import CharacterTextSplitter
+from get_embedding_function import get_embedding_function
+from langchain_community.vectorstores import FAISS
 import argparse
 
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
-from helper_functions import *
+# from helper_functions import *
+
+def encode_csv(path, model, chunk_size=1000, chunk_overlap=0):
+    """
+    Encodes a PDF book into a vector store using OpenAI embeddings.
+
+    Args:
+        path: The path to the PDF file.
+        chunk_size: The desired size of each text chunk.
+        chunk_overlap: The amount of overlap between consecutive chunks.
+
+    Returns:
+        A FAISS vector store containing the encoded book content.
+    """
+
+    # Load PDF documents
+    loader = CSVLoader(file_path=path,
+        csv_args={
+        'delimiter': ',',
+        'quotechar': '"',
+        'fieldnames': ['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution']},
+        metadata_columns=['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution'],
+        content_columns=['Problem Summary', 'Problem Description', 'Notes & Resolution'],
+        encoding='utf-8')
+    documents = loader.load()
+
+    # Split documents into chunks
+    text_splitter = CharacterTextSplitter(
+        chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len
+    )
+    texts = text_splitter.split_documents(documents)
+
+    # Create embeddings and vector store
+    embeddings = get_embedding_function(model, "http://127.0.0.1:11434")
+    vectorstore = FAISS.from_documents(texts, embeddings)
+
+    return vectorstore
 
 class CrossEncoderRetriever(BaseRetriever, BaseModel):
     vectorstore: Any = Field(description="Vector store for initial retrieval")
@@ -84,8 +123,7 @@ def parse_args():
     parser.add_argument("--path", type=str, default="data/mantis.csv", help="Path to the document")
     parser.add_argument("--query", type=str, default='Insight is not working?', help="Query to ask")
     parser.add_argument("--model", type=str, default='llama3.2:latest', help="Model Name")
-    parser.add_argument("--retriever_type", type=str, default="cross_encoder", choices=["reranker", "cross_encoder"],
-                        help="Type of retriever to use")
+    parser.add_argument("--retriever_type", type=str, default="cross_encoder", choices=["reranker", "cross_encoder"], help="Type of retriever to use")
     return parser.parse_args()
 
 
@@ -94,18 +132,6 @@ if __name__ == "__main__":
     # pipeline = RAGPipeline(path=args.path, model=args.model)
     # pipeline.run(query=args.query, retriever_type=args.retriever_type)
 
-    # Demonstrate the reranking comparison
-    # Example that demonstrates why we should use reranking
-    # chunks = [
-    #     "The capital of France is great.",
-    #     "The capital of France is huge.",
-    #     "The capital of France is beautiful.",
-    #     """Have you ever visited Paris? It is a beautiful city where you can eat delicious food and see the Eiffel Tower. 
-    #     I really enjoyed all the cities in France, but its capital with the Eiffel Tower is my favorite city.""",
-    #     "I really enjoyed my trip to Paris, France. The city is beautiful and the food is delicious. I would love to visit again. Such a great capital city."
-    # ]
-    # docs = [Document(page_content=sentence) for sentence in chunks]
-        # Load PDF documents
     loader = CSVLoader(file_path=args.path,
         csv_args={
         'delimiter': ',',
