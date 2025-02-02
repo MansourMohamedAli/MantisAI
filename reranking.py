@@ -94,8 +94,16 @@ def compare_rag_techniques(query: str, docs: List[Document]) -> None:
         print(doc.page_content)
 
     print("\nAdvanced Retrieval Result:")
-    custom_retriever = CustomRetriever(vectorstore=vectorstore)
-    advanced_docs = custom_retriever._get_relevant_documents(query)
+    # custom_retriever = CustomRetriever(vectorstore=vectorstore)
+    # advanced_docs = custom_retriever._get_relevant_documents(query)
+    cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+    retriever = CrossEncoderRetriever(
+        vectorstore=vectorstore,
+        cross_encoder=cross_encoder,
+        k=30,
+        rerank_top_k=5
+    )
+    advanced_docs = retriever._get_relevant_documents(query)
     for i, doc in enumerate(advanced_docs):
         print(f"\nDocument {i + 1}:")
         print(doc.page_content)
@@ -103,9 +111,10 @@ def compare_rag_techniques(query: str, docs: List[Document]) -> None:
 
 # Main class
 class RAGPipeline:
-    def __init__(self, path: str):
-        self.vectorstore = encode_csv(path)
-        self.llm = ChatOpenAI(base_url="http://127.0.0.1:11434/v1", temperature=0, model_name="llama3.2:latest", max_tokens=4000, api_key="Ollama")
+    def __init__(self, path: str, model: str):
+        self.vectorstore = encode_csv(path, model)
+        self.model_name = model
+        self.llm = ChatOpenAI(base_url="http://127.0.0.1:11434/v1", temperature=0, model_name=self.model_name, max_tokens=4000, api_key="Ollama")
 
     def run(self, query: str, retriever_type: str = "reranker"):
         if retriever_type == "reranker":
@@ -121,21 +130,21 @@ class RAGPipeline:
         else:
             raise ValueError("Unknown retriever type. Use 'reranker' or 'cross_encoder'.")
 
-        qa_chain = RetrievalQA.from_chain_type(
-            llm=self.llm,
-            chain_type="stuff",
-            retriever=retriever,
-            return_source_documents=True
-        )
+        # qa_chain = RetrievalQA.from_chain_type(
+        #     llm=self.llm,
+        #     chain_type="stuff",
+        #     retriever=retriever,
+        #     return_source_documents=True
+        # )
 
-        result = qa_chain.invoke({"query": query})
+        # result = qa_chain.invoke({"query": query})
 
-        print(f"\nQuestion: {query}")
-        print(f"Answer: {result['result']}")
-        print("\nRelevant source documents:")
-        for i, doc in enumerate(result["source_documents"]):
-            print(f"\nDocument {i + 1}:")
-            print(doc.page_content[:200] + "...")
+        # print(f"\nQuestion: {query}")
+        # print(f"Answer: {result['result']}")
+        # print("\nRelevant source documents:")
+        # for i, doc in enumerate(result["source_documents"]):
+        #     print(f"\nDocument {i + 1}:")
+        #     print(doc.page_content[:200] + "...")
 
 
 # Argument Parsing
@@ -143,15 +152,16 @@ def parse_args():
     parser = argparse.ArgumentParser(description="RAG Pipeline")
     parser.add_argument("--path", type=str, default="data/mantis.csv", help="Path to the document")
     parser.add_argument("--query", type=str, default='how to fix failing lights?', help="Query to ask")
-    parser.add_argument("--retriever_type", type=str, default="reranker", choices=["reranker", "cross_encoder"],
+    parser.add_argument("--model", type=str, default='llama3.2:latest', help="Model Name")
+    parser.add_argument("--retriever_type", type=str, default="cross_encoder", choices=["reranker", "cross_encoder"],
                         help="Type of retriever to use")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    pipeline = RAGPipeline(path=args.path)
-    pipeline.run(query=args.query, retriever_type=args.retriever_type)
+    pipeline = RAGPipeline(path=args.path, model=args.model)
+    # pipeline.run(query=args.query, retriever_type=args.retriever_type)
 
     # Demonstrate the reranking comparison
     # Example that demonstrates why we should use reranking
@@ -164,5 +174,15 @@ if __name__ == "__main__":
     #     "I really enjoyed my trip to Paris, France. The city is beautiful and the food is delicious. I would love to visit again. Such a great capital city."
     # ]
     # docs = [Document(page_content=sentence) for sentence in chunks]
+        # Load PDF documents
+    loader = CSVLoader(file_path=args.path,
+        csv_args={
+        'delimiter': ',',
+        'quotechar': '"',
+        'fieldnames': ['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution']},
+        metadata_columns=['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution'],
+        content_columns=['Problem Summary', 'Problem Description', 'Notes & Resolution'],
+        encoding='utf-8')
+    docs = loader.load()
 
-    # compare_rag_techniques(query="what is the capital of france?", docs=docs)
+    compare_rag_techniques(query=args.query, docs=docs)
