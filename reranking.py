@@ -3,9 +3,7 @@ import sys
 from langchain.docstore.document import Document
 from typing import List, Any
 from langchain_openai import ChatOpenAI
-from langchain.chains import RetrievalQA
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.prompts import PromptTemplate
 from sentence_transformers import CrossEncoder
 from pydantic import BaseModel, Field
 from langchain_community.document_loaders.csv_loader import CSVLoader
@@ -15,9 +13,8 @@ from langchain_community.vectorstores import FAISS
 import argparse
 
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
-# from helper_functions import *
 
-def encode_csv(path, model, chunk_size=1000, chunk_overlap=0):
+def encode_csv(path, model, vector_store_path, chunk_size=1000, chunk_overlap=0):
     """
     Encodes a PDF book into a vector store using OpenAI embeddings.
 
@@ -50,7 +47,7 @@ def encode_csv(path, model, chunk_size=1000, chunk_overlap=0):
     # Create embeddings and vector store
     embeddings = get_embedding_function(model, "http://127.0.0.1:11434")
     vectorstore = FAISS.from_documents(texts, embeddings)
-
+    vectorstore.save_local(vector_store_path)
     return vectorstore
 
 class CrossEncoderRetriever(BaseRetriever, BaseModel):
@@ -82,7 +79,7 @@ def compare_rag_techniques(query: str, docs: List[Document]) -> None:
         f.write(f"Query: {query}\n")
 
         f.write("Baseline Retrieval Result:\n")
-        baseline_docs = vectorstore.similarity_search(query, k=2)
+        baseline_docs = vectorstore.similarity_search(query, k=5)
         for i, doc in enumerate(baseline_docs):
             f.write(f"\nDocument {i + 1}:")
             f.write(doc.page_content)
@@ -92,7 +89,7 @@ def compare_rag_techniques(query: str, docs: List[Document]) -> None:
         retriever = CrossEncoderRetriever(
             vectorstore=vectorstore,
             cross_encoder=cross_encoder,
-            k=30,
+            k=10,
             rerank_top_k=5
         )
         advanced_docs = retriever._get_relevant_documents(query)
@@ -100,15 +97,18 @@ def compare_rag_techniques(query: str, docs: List[Document]) -> None:
             f.write(f"\nDocument {i + 1}:")
             f.write(doc.page_content)
 
-
 # Main class
 class RAGPipeline:
-    def __init__(self, path: str, model: str):
-        self.vectorstore = encode_csv(path, model)
-        self.model_name = model
-        self.llm = ChatOpenAI(base_url="http://127.0.0.1:11434/v1", temperature=0, model_name=self.model_name, max_tokens=4000, api_key="Ollama")
+    def __init__(self, path: str, model: str, vector_store_path: str):
+        embeddings = get_embedding_function(model, "http://127.0.0.1:11434")
+        # self.model_name = model
+        # self.llm = ChatOpenAI(base_url="http://127.0.0.1:11434/v1", temperature=0, model_name=self.model_name, max_tokens=4000, api_key="Ollama")
+        if os.path.exists(vector_store_path):
+            self.vectorstore = FAISS.load_local(vector_store_path, embeddings, allow_dangerous_deserialization=True)
+        else:
+            self.vectorstore = encode_csv(path, model, vector_store_path)
 
-    def run(self, query: str, retriever_type: str = "reranker"):
+    def run(self, query: str):
         cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
         retriever = CrossEncoderRetriever(
             vectorstore=self.vectorstore,
@@ -116,6 +116,19 @@ class RAGPipeline:
             k=10,
             rerank_top_k=5
         )
+        with open('BaselineResults.txt','w', encoding='utf-8') as f:
+            f.write(f"Query: {query}\n")
+            baseline_docs = self.vectorstore.similarity_search(query, k=5)
+            for i, doc in enumerate(baseline_docs):
+                f.write(f"\nDocument {i + 1}:")
+                f.write(doc.page_content)
+
+        with open('RerankedResults.txt','w', encoding='utf-8') as f:
+            f.write(f"Query: {query}\n")
+            advanced_docs = retriever._get_relevant_documents(query)
+            for i, doc in enumerate(advanced_docs):
+                f.write(f"\nDocument {i + 1}:")
+                f.write(doc.page_content)
 
 # Argument Parsing
 def parse_args():
@@ -123,14 +136,15 @@ def parse_args():
     parser.add_argument("--path", type=str, default="data/mantis.csv", help="Path to the document")
     parser.add_argument("--query", type=str, default='Insight is not working?', help="Query to ask")
     parser.add_argument("--model", type=str, default='llama3.2:latest', help="Model Name")
+    parser.add_argument("--vector_store_path", type=str, default='vector_stores/vector_store', help="Vector Store Path")
     parser.add_argument("--retriever_type", type=str, default="cross_encoder", choices=["reranker", "cross_encoder"], help="Type of retriever to use")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    # pipeline = RAGPipeline(path=args.path, model=args.model)
-    # pipeline.run(query=args.query, retriever_type=args.retriever_type)
+    pipeline = RAGPipeline(path=args.path, model=args.model, vector_store_path=args.vector_store_path)
+    pipeline.run(query=args.query)
 
     loader = CSVLoader(file_path=args.path,
         csv_args={
