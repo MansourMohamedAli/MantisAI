@@ -34,19 +34,20 @@ def encode_csv(path, model, vector_store_path, chunk_size=1000, chunk_overlap=0)
         'quotechar': '"',
         'fieldnames': ['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution']},
         metadata_columns=['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution'],
-        content_columns=['Problem Summary', 'Problem Description', 'Notes & Resolution'],
+        # content_columns=['Problem Summary', 'Problem Description', 'Notes & Resolution'],
+        content_columns=['Problem Summary'],
         encoding='utf-8')
     documents = loader.load()
 
     # Split documents into chunks
-    text_splitter = CharacterTextSplitter(
-        chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len
-    )
-    texts = text_splitter.split_documents(documents)
+    # text_splitter = CharacterTextSplitter(
+    #     chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len
+    # )
+    # texts = text_splitter.split_documents(documents)
 
     # Create embeddings and vector store
     embeddings = get_embedding_function(model, "http://127.0.0.1:11434")
-    vectorstore = FAISS.from_documents(texts, embeddings)
+    vectorstore = FAISS.from_documents(documents, embeddings)
     vectorstore.save_local(vector_store_path)
     return vectorstore
 
@@ -79,7 +80,7 @@ def compare_rag_techniques(query: str, docs: List[Document]) -> None:
         f.write(f"Query: {query}\n")
 
         f.write("Baseline Retrieval Result:\n")
-        baseline_docs = vectorstore.similarity_search(query, k=5)
+        baseline_docs = vectorstore.similarity_search(query, k=10)
         for i, doc in enumerate(baseline_docs):
             f.write(f"\nDocument {i + 1}:")
             f.write(doc.page_content)
@@ -89,8 +90,8 @@ def compare_rag_techniques(query: str, docs: List[Document]) -> None:
         retriever = CrossEncoderRetriever(
             vectorstore=vectorstore,
             cross_encoder=cross_encoder,
-            k=10,
-            rerank_top_k=5
+            k=200,
+            rerank_top_k=10
         )
         advanced_docs = retriever._get_relevant_documents(query)
         for i, doc in enumerate(advanced_docs):
@@ -135,7 +136,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="RAG Pipeline")
     parser.add_argument("--path", type=str, default="data/mantis.csv", help="Path to the document")
     parser.add_argument("--query", type=str, default='Insight is not working?', help="Query to ask")
-    parser.add_argument("--model", type=str, default='llama3.2:latest', help="Model Name")
+    parser.add_argument("--model", type=str, default='nomic-embed-text:latest', help="Model Name")
     parser.add_argument("--vector_store_path", type=str, default='vector_stores/vector_store', help="Vector Store Path")
     parser.add_argument("--retriever_type", type=str, default="cross_encoder", choices=["reranker", "cross_encoder"], help="Type of retriever to use")
     return parser.parse_args()
@@ -146,14 +147,15 @@ if __name__ == "__main__":
     pipeline = RAGPipeline(path=args.path, model=args.model, vector_store_path=args.vector_store_path)
     pipeline.run(query=args.query)
 
-    loader = CSVLoader(file_path=args.path,
-        csv_args={
-        'delimiter': ',',
-        'quotechar': '"',
-        'fieldnames': ['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution']},
-        metadata_columns=['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution'],
-        content_columns=['Problem Summary', 'Problem Description', 'Notes & Resolution'],
-        encoding='utf-8')
-    docs = loader.load()
+    # loader = CSVLoader(file_path=args.path,
+    #     csv_args={
+    #     'delimiter': ',',
+    #     'quotechar': '"',
+    #     'fieldnames': ['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution']},
+    #     metadata_columns=['DR#', 'Problem Summary', 'Problem Description', 'Notes & Resolution'],
+    #     # content_columns=['Problem Summary', 'Problem Description', 'Notes & Resolution'],
+    #     content_columns=['Problem Summary'],
+    #     encoding='utf-8')
+    # docs = loader.load()
 
-    compare_rag_techniques(query=args.query, docs=docs)
+    # compare_rag_techniques(query=args.query, docs=docs)
